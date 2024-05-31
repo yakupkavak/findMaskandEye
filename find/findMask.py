@@ -8,7 +8,7 @@ import pstats
 
 def main():
     cam = cv2.VideoCapture(0)
-
+    iris = False
     face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
     eye_cascade = cv2.CascadeClassifier("haarcascade_eye.xml")
     mounth_cascade = cv2.CascadeClassifier("haarcascade_mcs_mouth.xml")
@@ -27,10 +27,12 @@ def main():
     camX, camY = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     cerceve = np.zeros((camY, camX + 100, 3), np.uint8)
-    print(cerceve.shape[1])
+
     cerceve[0:120, 0:120] = (255,255,255)
 
-    cv2.putText(cerceve,"Detected",(12,14),cv2.FONT_HERSHEY_SIMPLEX,0.6,(100,0,255),1)
+    eye_color_matrix = np.zeros((120, 120, 3), dtype=np.uint8)
+
+    cv2.putText(cerceve,"Detect",(12,14),cv2.FONT_HERSHEY_SIMPLEX,0.6,(100,0,255),1)
     cv2.putText(cerceve,"Eye",(32,28),cv2.FONT_HERSHEY_SIMPLEX,0.6,(100,0,255),1)
 
     checkEye = False
@@ -38,7 +40,6 @@ def main():
     #GÖZÜ YÜZÜN İÇERİSİNDE ARAMIYOR
     def nothing(int):
         pass
-
 
     while cam.isOpened():
         _, frame = cam.read()
@@ -62,7 +63,7 @@ def main():
             eye_gray = gray_frame[y:y + h, x:x + w]  #EYE GRAY DOĞRU ÇALIŞIYOR
 
             eyes = eye_cascade.detectMultiScale(eye_gray, 1.25, 15)
-            cerceve[40:140, :120] = (255, 255, 255)
+            cerceve[40:110, :90] = (255, 255, 255)
             for (ex, ey, ew, eh) in eyes:
                 eyeCount = 0
                 #cv2.rectangle(frame, (x + ex, y + ey), (x + ex + ew, y + eh + ey), (155, 0, 0),2)
@@ -79,13 +80,12 @@ def main():
 
                     if below_eye.size != 0:
                         #YAKIN MESAFE KONTROLÜ
-                        cv2.imshow("kontrol",below_eye)
                         if (below_eye.shape[1] > 140):
                             #below_eye = cv2.GaussianBlur(below_eye, (5, 5), 1.2)
                             mouths = mounth_cascade.detectMultiScale(below_eye, 1.3, 8)
                             for (mx, my, mw, mh) in mouths:
-                                cv2.rectangle(frame, (x + mx, my + int(sumMounthY * 1.2) + y),
-                                              (x + mx + mw, my + int(sumMounthY * 1.2) + y + mh), (0, 0, 0), 2)
+                                #cv2.rectangle(frame, (x + mx, my + int(sumMounthY * 1.2) + y),
+                                #              (x + mx + mw, my + int(sumMounthY * 1.2) + y + mh), (0, 0, 0), 2)
                                 mask_wearing = True
 
                         #UZAK MESAFE KONTROLÜ
@@ -93,15 +93,15 @@ def main():
                             #below_eye = cv2.GaussianBlur(below_eye, (3, 3), 1)
                             mouths = mounth_cascade.detectMultiScale(below_eye, 1.11, 6, minSize=(20, 20))
                             for (mx, my, mw, mh) in mouths:
-                                cv2.rectangle(frame, (x + mx, my + int(sumMounthY * 1.2) + y),
-                                             (x + mx + mw, my + int(sumMounthY * 1.2) + y + mh), (0, 0, 0), 2)
+                                #cv2.rectangle(frame, (x + mx, my + int(sumMounthY * 1.2) + y),
+                                #             (x + mx + mw, my + int(sumMounthY * 1.2) + y + mh), (0, 0, 0), 2)
                                 mask_wearing = True
 
                 myFace = frame[maskY:maskY + maskH, maskX:maskX + maskW]
 
                 cerceve[360:480, :120] = (255, 255, 255)
-                if mask_wearing:
 
+                if mask_wearing:
                     virus_resize = cv2.resize(virus, (maskW, maskH))
                     masked_resize = cv2.resize(masked, (maskW, maskH))
                     masked_inverted = cv2.bitwise_not(masked_resize)
@@ -113,6 +113,7 @@ def main():
                     frame[maskY:maskY + maskH, maskX:maskX + maskW] = final_img
 
                     cerceve[360:480, :120] = false
+                    checkEye = False
 
                 else:
                     cerceve[360:480, :120] = tik
@@ -120,35 +121,77 @@ def main():
 
         cerceve[:, 100:] = frame
 
-
         key = cv2.waitKey(10)
         if key == ord("q"):
             break
         elif key == ord("o"):
-            checkEye = True
+            if mask_wearing is False:
+                checkEye = True
+
         elif key == ord("c"):
             checkEye = False
+            cerceve[40:110, :90] = (255, 255, 255)
 
         if checkEye:
-            cv2.rectangle(cerceve,(150,50),(220,110),(0,255,0),2)
-            getEyeGray = gray_frame[50:110, 150:220]
-            myEye = frame[50:100,150:220]
-            minDist = 20
+            if iris:
+                cv2.rectangle(cerceve, (250, 100), (320, 170), (0, 255, 0), 2)
+            else:
+                cv2.rectangle(cerceve, (250, 100), (320, 170), (0, 0, 255), 2)
+            getEyeGray = gray_frame[100:170, 150:220]
+            myEye = frame[100:170, 150:220]
+            minDist = 30
             param1 = 52
-            param2 = 50
-            circles = cv2.HoughCircles(getEyeGray, cv2.HOUGH_GRADIENT, 1.2, minDist, param1=param1, param2=param2,
-                                       minRadius=20, maxRadius=80)
+            param2 = 20
+
+            circles = cv2.HoughCircles(getEyeGray, cv2.HOUGH_GRADIENT, 1, minDist, param1=param1, param2=param2,
+                                       minRadius=14, maxRadius=20)
+
             if circles is not None:
                 circles = np.uint16(np.around(circles))
 
                 for a, b, r in circles[0, :]:  # 0.indexten tamamını alıyoruz
-                    cv2.circle(myEye, (a, b), r, (0, 255, 255), -1)
+                    print("göz algılandı")
+                    cv2.circle(getEyeGray, (a, b), r, (0,0,0), -1)
+                    _, maskedEye = cv2.threshold(getEyeGray, 10, 255, cv2.THRESH_BINARY)
+                    reverseMaskedEye = cv2.bitwise_not(maskedEye)
 
-            eyeX = myEye.shape[0]
-            eyeY = myEye.shape[1]
-            cerceve[40:90, 20:90] = myEye
+                    eye_bg = cv2.bitwise_and(myEye,myEye,mask= maskedEye)
+                    eye_fg = cv2.bitwise_and(myEye, myEye, mask=reverseMaskedEye)
+
+                    eye_fg_gray = cv2.cvtColor(eye_fg, cv2.COLOR_BGR2GRAY)
+
+                    newCircle = cv2.HoughCircles(eye_fg_gray, cv2.HOUGH_GRADIENT, 1, minDist, param1=5, param2=2,
+                                               minRadius=2, maxRadius=10)
+
+                    #göz bebeği çıkarılıyor eye_fg den
+                    if newCircle is not None:
+                        print("gözbebeği algılandı")
+                        newCircle = np.uint16(np.around(newCircle))
+
+                        for ca, cb, cr in newCircle[0, :]:
+                            #GÖZ BEBEĞİ ALGILANDI
+                            iris = True
+                            cv2.circle(eye_fg_gray, (ca, cb), cr, (0, 0, 0), -1)
+                            _, cMaskedEye = cv2.threshold(eye_fg_gray, 10, 255, cv2.THRESH_BINARY)
+
+                            eye_new_fg = cv2.bitwise_and(myEye, myEye, mask=cMaskedEye)
+                            iris_mean_color2 = cv2.mean(eye_new_fg, mask=cMaskedEye)[:3]
+
+                            b,g,r = iris_mean_color2[0],iris_mean_color2[1],iris_mean_color2[2]
+
+                            eyeColor = (b,g,r)
+                            cv2.imshow("eye fg", eye_new_fg)
+
+
+
+
+
+
+
+            cerceve[40:110, 20:90] = myEye
 
         cv2.imshow("Find Mask and Eye", cerceve)
+
     cv2.destroyAllWindows()
 
 
