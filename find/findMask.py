@@ -71,25 +71,28 @@ def create_menu():
 def main():
     cam = cv2.VideoCapture(0)
     iris = False
+
+    cv2.namedWindow("Find Mask and Eye", cv2.WINDOW_AUTOSIZE)
+
+    #seymen
     face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
     eye_cascade = cv2.CascadeClassifier("haarcascade_eye.xml")
     mounth_cascade = cv2.CascadeClassifier("haarcascade_mcs_mouth.xml")
 
-    virus = cv2.imread("virus.jpg")
-
+    # visual acquisition part
     tik = cv2.imread("tickicon.png",1)
     tik = cv2.resize(tik,(120,120))
-
     false = cv2.imread("delete.png",1)
     false = cv2.resize(false,(120,120))
 
-
+    #batuhan
+    virus = cv2.imread("virus.jpg")
     virus_gray = cv2.cvtColor(virus, cv2.COLOR_BGR2GRAY)
     _, masked = cv2.threshold(virus_gray, 10, 255, cv2.THRESH_BINARY)
 
-    cv2.namedWindow("Find Mask and Eye", cv2.WINDOW_AUTOSIZE)
     camX, camY = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
+    #yakup
     cerceve = np.zeros((camY, camX + 100, 3), np.uint8)
     cerceve[121:360,:120] = (255,255,255)
     cerceve[0:119, 0:120] = (255,255,255)
@@ -105,31 +108,27 @@ def main():
 
     checkEye = False
 
-    #GÖZÜ YÜZÜN İÇERİSİNDE ARAMIYOR
-    def nothing(int):
-        pass
 
     while cam.isOpened():
         _, frame = cam.read()
 
         video = frame.copy()
 
-        sumMounthX = 0
-        sumMounthY = 0
         mask_wearing = False
-        maskX, maskY, maskH, maskW = 0,0,0,0
 
+        #seymen
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
         faces = face_cascade.detectMultiScale(gray_frame, 1.1, 11,minSize= (100,100))
 
         for (x, y, w, h) in faces:
             mask_wearing = False
+
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), 3)
 
             maskX, maskY, maskH, maskW = x, y, h, w
-            eye_gray = gray_frame[y:y + h, x:x + w]  #EYE GRAY DOĞRU ÇALIŞIYOR
+            eye_gray = gray_frame[y:y + h, x:x + w]
 
+            #eye detect
             eyes = eye_cascade.detectMultiScale(eye_gray, 1.25, 15)
 
             for (ex, ey, ew, eh) in eyes:
@@ -139,28 +138,34 @@ def main():
 
                 if (eyeCount == 0):
                     currentEye = video[y + ey:y + sumMounthY, x + ex:x + sumMounthX]
+
                     #TO GET EYE COLOR WE NEED TO MATRIX OF EYE
                     #CONTROL THE MASK SECTİON
+
+                    #gözün altını ayırt ettik seymen
                     below_eye = eye_gray[int(sumMounthY * 1.2):, :]
 
                     if below_eye.size != 0:
-                        #YAKIN MESAFE KONTROLÜ
+
+                        # CLOSE DISTANCE CONTROL #control of whether it is far or not and the mouth is detected
                         if (below_eye.shape[1] > 140):
                             mouths = mounth_cascade.detectMultiScale(below_eye, 1.1, 8)
                             for (mx, my, mw, mh) in mouths:
                                 mask_wearing = True
 
-                        #UZAK MESAFE KONTROLÜ
+                        # REMOTE CONTROL
                         else:
                             mouths = mounth_cascade.detectMultiScale(below_eye, 1.01, 6, minSize=(20, 20))
                             #check to identfiy mouth
                             for (mx, my, mw, mh) in mouths:
                                 mask_wearing = True
 
+                # detected face pixels
                 myFace = frame[maskY:maskY + maskH, maskX:maskX + maskW]
 
                 cerceve[360:480, :120] = (255, 255, 255)
 
+                #batuhan
                 if mask_wearing:
                     virus_resize = cv2.resize(virus, (maskW, maskH))
                     masked_resize = cv2.resize(masked, (maskW, maskH))
@@ -168,6 +173,7 @@ def main():
     
                     img_bg = cv2.bitwise_and(myFace, myFace, mask=masked_inverted)
                     img_fg = cv2.bitwise_and(virus_resize, virus_resize, mask=masked_resize)
+
                     final_img = cv2.add(img_bg, img_fg)
 
                     frame[maskY:maskY + maskH, maskX:maskX + maskW] = final_img
@@ -177,16 +183,18 @@ def main():
 
                 else:
                     cerceve[360:480, :120] = tik
-                    print("maske takılıyor")
+
 
         cerceve[:, 100:] = frame
 
+        #yakup
         key = cv2.waitKey(10)
+
         if key == ord("q"):
             show_main_menu()
             break
-        elif key == ord("o"):
 
+        elif key == ord("o"):
             if mask_wearing is False:
                 checkEye = True
 
@@ -195,14 +203,20 @@ def main():
             cerceve[40:110, :90] = (255, 255, 255)
 
         if checkEye:
+            #yakup
             if iris:
                 cv2.rectangle(cerceve, (250, 100), (320, 170), (0, 255, 0), 2)
             else:
                 cv2.rectangle(cerceve, (250, 100), (320, 170), (0, 0, 255), 2)
+
             cerceve[40:110, :90] = (255, 255, 255)
             cerceve[278:360, :90] = (255, 255, 255)
+
+
             getEyeGray = gray_frame[100:170, 150:220]
             myEye = frame[100:170, 150:220]
+
+            # oğuzhan
             minDist = 30
             param1 = 54
             param2 = 22
@@ -218,8 +232,10 @@ def main():
                     print("eye algılandı")
 
                     cv2.circle(getEyeGray, (a, b), r, (0,0,0), -1)
-                    _, maskedEye = cv2.threshold(getEyeGray, 10, 255, cv2.THRESH_BINARY)
+                    # oğuzhan the inside of the eye was painted black
 
+                    # yakup
+                    _, maskedEye = cv2.threshold(getEyeGray, 10, 255, cv2.THRESH_BINARY)
                     reverseMaskedEye = cv2.bitwise_not(maskedEye)
 
                     eye_bg = cv2.bitwise_and(myEye,myEye,mask= maskedEye)
@@ -227,18 +243,26 @@ def main():
 
                     eye_fg_gray = cv2.cvtColor(eye_fg, cv2.COLOR_BGR2GRAY)
 
+                    #yakup
+
+                    # oğuzhan
+                    # the eye that was removed has the iris and pupil together, found the pupil
+
                     newCircle = cv2.HoughCircles(eye_fg_gray, cv2.HOUGH_GRADIENT, 1, minDist, param1=15, param2=11,
                                                minRadius=3, maxRadius=6)
 
-                    #göz bebeği çıkarılıyor eye_fg den
+                    # pupil being removed from eye_fg
                     if newCircle is not None:
                         print("gözbebeği algılandı")
                         newCircle = np.uint16(np.around(newCircle))
 
                         for ca, cb, cr in newCircle[0, :]:
-                            #GÖZ BEBEĞİ ALGILANDI
+                            # painted the PUPIL OF THE EYE black
                             iris = True
                             cv2.circle(eye_fg_gray, (ca, cb), cr, (0, 0, 0), -1)
+
+
+                            #mask
                             _, cMaskedEye = cv2.threshold(eye_fg_gray, 10, 255, cv2.THRESH_BINARY)
 
                             eye_new_fg = cv2.bitwise_and(myEye, myEye, mask=cMaskedEye)
@@ -249,8 +273,9 @@ def main():
                             cerceve[40:110, 20:90] = myEye
 
                             cerceve[160:160+irisShape,20:20+irisShape] = eye_new_fg
-                            b,g,r = iris_mean_color2[0],iris_mean_color2[1],iris_mean_color2[2]
 
+                            # We took the color of your eyes, Oğuzhan
+                            b,g,r = iris_mean_color2[0],iris_mean_color2[1],iris_mean_color2[2]
                             eyeColor = (b,g,r)
                             eye_color_matrix[:,:] = eyeColor
                             cerceve[300:360,:120] = eyeColor
@@ -263,7 +288,6 @@ def main():
                             elif r < 130 and g < 180 and 130 < b:
                                 cv2.putText(cerceve, "Blue", (22, 295), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (b, g, r), 1)
 
-
                             checkEye = False
 
 
@@ -274,16 +298,12 @@ def main():
     cv2.destroyAllWindows()
 
 
-
-
 if __name__ == '__main__':
-    # Profiling şlemini başlat
+
+    # Profiling işlemini başlat
     create_menu()
     profiler = cProfile.Profile()
     profiler.enable()
-
-    # Ana fonksiyonu çalıştır
-    #main()
 
     # Profiling'i durdur
     profiler.disable()
