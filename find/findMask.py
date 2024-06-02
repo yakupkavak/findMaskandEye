@@ -4,7 +4,69 @@ from matplotlib import pyplot as plt
 from random import randint as rnd
 import cProfile
 import pstats
+import tkinter as tk
+from tkinter import messagebox
+def on_start():
+    #start the main
+    main()
+def show_info_menu():
+    main_menu_frame.pack_forget()
+    info_menu_frame.pack(pady=20)
 
+def show_main_menu():
+    info_menu_frame.pack_forget()
+    main_menu_frame.pack(pady=20)
+
+def on_close():
+    root.destroy()
+
+def create_menu():
+    global root, main_menu_frame, info_menu_frame
+    root = tk.Tk()
+    root.title("Menu Example")
+    root.geometry("400x380")
+    root.configure(bg="#2E3B4E")
+
+    # Set the window icon
+    icon = tk.PhotoImage(file='menu_image.png')  # Change this to your icon file path
+    root.iconphoto(False, icon)
+
+    main_menu_frame = tk.Frame(root, bg="#2E3B4E")
+    main_menu_frame.pack(pady=20)
+
+    info_menu_frame = tk.Frame(root, bg="#2E3B4E")
+
+    label = tk.Label(main_menu_frame, text="Welcome to the Menu", font=("Helvetica", 18, "bold"), bg="#2E3B4E", fg="#FFFFFF")
+    label.pack(pady=20)
+
+    start_button = tk.Button(main_menu_frame, text="Start", font=("Helvetica", 14), width=30, bg="#4CAF50", fg="#FFFFFF", command=on_start)
+    start_button.pack(pady=10)
+
+    info_button = tk.Button(main_menu_frame, text="Info", font=("Helvetica", 14), width=30, bg="#2196F3", fg="#FFFFFF", command=show_info_menu)
+    info_button.pack(pady=10)
+
+    close_button = tk.Button(main_menu_frame, text="Close", font=("Helvetica", 14), width=30, bg="#F44336", fg="#FFFFFF", command=on_close)
+    close_button.pack(pady=10)
+
+    info_label = tk.Label(info_menu_frame, text="Information", font=("Helvetica", 18, "bold"), bg="#2E3B4E", fg="#FFFFFF")
+    info_label.pack(pady=20)
+
+    eye_on_label = tk.Label(info_menu_frame, text="o —> turns on eye detection", font=("Helvetica", 14), bg="#2E3B4E", fg="#FFFFFF")
+    eye_on_label.pack(pady=10)
+
+    eye_off_label = tk.Label(info_menu_frame, text="c —> turns off eye detection", font=("Helvetica", 14), bg="#2E3B4E", fg="#FFFFFF")
+    eye_off_label.pack(pady=10)
+
+    return_label = tk.Label(info_menu_frame, text="q —> return to main screen", font=("Helvetica", 14), bg="#2E3B4E", fg="#FFFFFF")
+    return_label.pack(pady=10)
+
+    mask_label = tk.Label(info_menu_frame, text="You have to wear mask to eye detect", font=("Helvetica", 14), bg="#2E3B4E", fg="#FFFFFF")
+    mask_label.pack(pady=10)
+
+    back_button = tk.Button(info_menu_frame, text="Back to Main Menu", font=("Helvetica", 14), width=30, bg="#2196F3", fg="#FFFFFF", command=show_main_menu)
+    back_button.pack(pady=20)
+
+    root.mainloop()
 
 def main():
     cam = cv2.VideoCapture(0)
@@ -59,7 +121,7 @@ def main():
 
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        faces = face_cascade.detectMultiScale(gray_frame, 1.1, 14,minSize= (100,100))
+        faces = face_cascade.detectMultiScale(gray_frame, 1.1, 11,minSize= (100,100))
 
         for (x, y, w, h) in faces:
             mask_wearing = False
@@ -84,7 +146,7 @@ def main():
                     if below_eye.size != 0:
                         #YAKIN MESAFE KONTROLÜ
                         if (below_eye.shape[1] > 140):
-                            mouths = mounth_cascade.detectMultiScale(below_eye, 1.3, 8)
+                            mouths = mounth_cascade.detectMultiScale(below_eye, 1.1, 8)
                             for (mx, my, mw, mh) in mouths:
                                 mask_wearing = True
 
@@ -121,6 +183,7 @@ def main():
 
         key = cv2.waitKey(10)
         if key == ord("q"):
+            show_main_menu()
             break
         elif key == ord("o"):
 
@@ -215,11 +278,12 @@ def main():
 
 if __name__ == '__main__':
     # Profiling şlemini başlat
+    create_menu()
     profiler = cProfile.Profile()
     profiler.enable()
 
     # Ana fonksiyonu çalıştır
-    main()
+    #main()
 
     # Profiling'i durdur
     profiler.disable()
